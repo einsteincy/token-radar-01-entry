@@ -54,7 +54,13 @@ if (issue !== null) {
 
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
-writeFileSync(join(out, 'data.js'), dataScript(radar));
+// P3 evidence (research numbers only — no model input): entry/evidence.json, a slim copy of
+// p3-evidence.json (seed 20261119), is appended to data.js as window.RADAR.evidence. The
+// dashboard renders from it; nothing here touches the model or the verdicts.
+const evPath = join(here, 'evidence.json');
+const evText = existsSync(evPath) ? readFileSync(evPath, 'utf8') : 'null';
+JSON.parse(evText);
+writeFileSync(join(out, 'data.js'), `${dataScript(radar)}window.RADAR.evidence=${evText.trim()};\n`);
 
 /** Copy one directory's regular files into `to`, skipping names that start with a dot. */
 function copyFiles(from: string, to: string): string[] {
