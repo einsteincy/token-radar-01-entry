@@ -6,8 +6,8 @@ here is a claim about the future.
 
 ## 1. What this entry is
 
-A radar pricing all 198 pre-token protocols — the 40-protocol watchlist plus every other pre-token protocol the snapshot holds — off the 94 comps that already trade. Every implied value carries the band the backtest earns (LOO P10 x0.08 to
-P90 x9.16); every row carries a farm plan netted to the dollar (pro-rata 10% share), a
+A radar pricing all 198 pre-token protocols — the 40-protocol watchlist plus every other pre-token protocol the snapshot holds — off the 94 comps that already trade. Every implied value carries the LOO band (P10 x0.08 to
+P90 x9.16); every row carries a farm plan netted to the dollar, a
 verdict, a break-even share, and a net-per-hour figure.
 
 ## 2. The board: 198 clean rows, 758 accounted for
@@ -18,7 +18,7 @@ whole-word wrapped/staked (5 more; 20 match in total), exchange-prefixed names (
 Leaves 198 clean rows. Ledger: 758 = 198 ranked + 416 already trade + 43 bridges + 43
 liquid staking & restaking + 42 exchange custody + 11 versioned + 5 wrapped or staked.
 The 198 are 40 on the watchlist, 138 below the $50M floor, 20 above the floor but not on
-it — flagged, not hidden (Sentora $2,758M, Polymarket $320M), almost certainly by `parentProtocol` (not in the snapshot). Reconciled against the RULES text; an earlier looser pattern gave 196 rows. All 40 watchlist slugs present (40/40).
+it — flagged, not hidden (Sentora $2,758M, Polymarket $320M), probably by `parentProtocol` (not in the snapshot). All 40 watchlist slugs present (40/40).
 
 ## 3. The model
 
@@ -28,7 +28,7 @@ R-squared 0.103, residual SD 1.99 log in-sample (2.03 leave-one-out). Category e
 Only 76 of 198 rows sit in categories with 5+ comps; 20 with 3-4, 84 with 1-2, 18 with none
 (effect 0). Risk Curators (34 rows) rests on one comp (x1.56 from a single residual);
 each detail view shows the row's category n and mean residual. Sibling x0.5 on 7 rows.
-No name is special-cased. Tested and dropped (all hurt out-of-sample): seven-day growth,
+Tested and dropped (all hurt out-of-sample): seven-day growth,
 maturity/seasoning, breadth / chains. Growth stays as a column; age drives P(launch).
 
 ## 4. The band and the blind tests
@@ -37,14 +37,14 @@ LOO band on the 94 comps: P10 x0.08 / P25 x0.30 / P75 x4.03 / P90 x9.16, median 
 x3.69. Random 47/47 split, 200 seeded repeats: model x3.44 (global-only x3.57). Time-split (fit pre-2024, test 2024+): model x2.21, global-only
 x2.08 (§10 — x2.08 is not the model's score). Walk-forward: 2023 (fit 17 / test 54)
 global x2.39 vs model x3.06; 2024 (fit 30 / test 41) global x2.08 vs model x2.21, rank ρ
-0.313 vs 0.301. The 2022 fold (fit 4) is degenerate. The category effect helps the random split and hurts the time-split; kept for its 200-rep win. Hit-rate on the 94 LOO ratios: within 3x 42.6%, within 10x 79.8%; the printed P25–P75
+0.313 vs 0.301. The 2022 fold (fit 4) is degenerate. The category effect is a wash on the random split (≈ +0.4% on average, wins 58/100 macro-seeds) and hurts the time-split; kept for that small edge and the category story's stated structure — not for time-split performance. Hit-rate on the 94 LOO ratios: within 3x 42.6%, within 10x 79.8%; the printed P25–P75
 band holds 48.9%, P10–P90 holds 77.7%. Refit stability (200×): only 8 of the top 20 stay
 in the top 20 in ≥80% of refits; median P90–P10 rank width 63.1. The board shows the
-P10–P90 rank range for top-20 rows (Predict Fun 2–143; Sentora 1–3, Steakhouse 2–4). Per-category bands are diagnostic only (n≥5), vs live global x0.30–x4.03 — see the model page table. RWA's SD band is 6.1x narrower than the global band (residual SD 0.60 vs 2.03
+P10–P90 rank range for top-20 rows (Predict Fun 2–143). Per-category bands are diagnostic only (n≥5), vs live global x0.30–x4.03 — see the model page table. RWA's SD band is 6.9x narrower (residual SD 0.60 vs 2.03
 global), but its empirical band
 sits almost entirely above x1.0. Three constructions would move 31, 9 and 16 rows; none
 is adopted. Bootstrap (500 resamples): precise only at $50M (−13.6%/+13.7%); $500M
-−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time from the snapshot; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; numbers in `entry/evidence.json`, injected into `data.js` at build time). Two runs write identical bytes. The
+−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; `entry/evidence.json`). Two runs write identical bytes. The
 old "±12%" holds only at $50M.
 
 ## 5. The launch base rate
@@ -58,8 +58,7 @@ P(launch) is the empirical age x TVL table (share with a token), not a model:
 |$200M–$1B|0.52|0.50|0.68|
 |$1B+|0.79|0.47|0.62|
 
-Overall 0.549; by age ≤1y 51.5%, 1–2y 38.6%, >2y 68.0%. Non-monotone (dips at 1–2y),
-so no logistic model is used. Smallest cell n=15. Calibration is weak: 5-fold CV
+Overall 0.549; by age ≤1y 51.5%, 1–2y 38.6%, >2y 68.0%. Non-monotone, so no logistic model is used. Smallest cell n=15. Calibration is weak: 5-fold CV
 log-loss (n=758) 0.670 vs 0.690 base rate vs 0.667 logistic (AUC 0.637); the earlier
 0.6527 is in-sample, not CV. Hazard caveat: the table is P(has-token) for a RANDOM
 protocol — an upper bound for old pre-token rows.
@@ -70,8 +69,8 @@ Net = P(launch) x (1000 / TVL) x 0.10 x implied − $10.93, at P25, point and P7
 $10.93 is $6 gas + $4.93 T-bill on $1,000 for 45 days at ~4%. ROBUST
 pays at the low end, FARM at the point, THIN only at the high end, SKIP at none
 (24/93/70/11). Verdicts are knife-edge: 36 rows sit within $2 of a boundary. Cost ±$2 changes 33–34 rows; share 5% changes 100 rows, 20% changes 112. The
-10% share is the biggest lever — an assumption, not a measurement. The flat $10.93 cost is
-kept although gas is chain-dependent: two readings of the design's own anchors give
+10% share is the biggest lever — an assumption, not a measurement. The flat $10.93 stays
+although gas is chain-dependent: two readings give
 $3.79–$14.58 (82 rows change) and $12.36–$31.72 (56 rows change) — opposite directions,
 so neither is adopted without a decision. Each row's farm plan is six steps from its own
 record (WHEN / COST / TIME table, exit TVL −30%, review date).
@@ -79,13 +78,13 @@ record (WHEN / COST / TIME table, exit TVL −30%, review date).
 ## 8. What the starter got wrong
 
 The starter ranks 200 rows (40 watchlist + 160 below the floor); 103 of the 160 are
-wrapped, bridged or staked products of live-token protocols, scored at a flat 0.25× TVL
-with multipliers that lose out-of-sample, and no band.
+wrapped, bridged or staked products of live-token protocols, scored at a flat 0.25× TVL,
+no band.
 
 ## 9. Honesty box: what the snapshot cannot say
 
 No `parentProtocol`, so the entry cannot verify why the 20 above-floor rows are off the
-watchlist. No ranking, implied value or farm plan is in the snapshot. The
+watchlist. No ranking or farm plan is in the snapshot. The
 10% share is an assumption. Implied value is not a price, not a prediction of whether or
 when a token is issued, nor a promise that farming pays.
 
@@ -106,4 +105,8 @@ comps + mean residual; the farm plan is a WHEN / COST / TIME table with total, e
 gain MODEL and MISS columns; the model page shows per-category bands, verdict sensitivity, chain-dependent cost ranges and launch calibration as diagnostics, plus a "Note to the judge". Bands and chain cost are NOT implemented (§4, §6).
 - **Numbers.** All P3 numbers come from `p3-evidence.mjs` (seed 20261119) via `entry/evidence.json`, injected into `data.js` at build time. `lib/model.ts` untouched; `main.ts` only gains the evidence injection.
 - **Audit ronde 1 (19 Nov).** §3 R²/SD corrected to the restricted 94 (0.103/1.99 in-sample, 2.03 LOO); lede floor split corrected (138 below, 20 above); §2 exclusion counts reconciled with the footer.
-- **Audit ronde 2 (19 Nov).** §3 split 76/20/84/18; §4 6.1x = SD band, not SD.
+- **Audit ronde 2 (19 Nov).** §3 split 76/20/84/18; §4 6.1x = SD band, not SD. **Revision round 2 (19 Nov): 6.1x corrected to 6.9x** — the 6.1x mixed the global *empirical* P25–P75 band (log-width 2.615) with the RWA *SD* band (0.804); the like-for-like SD-band width ratio is exp(2×0.6745×(2.033−0.596)) = 6.9x, reproducible from the SDs quoted in the sentence.
+
+## 11. P4 (board-first cover, 19 Nov 2026)
+
+Model, rows and verdicts unchanged (24/93/70/11). Layout only: cover is KPI strip + one evidence row + board (≥8 rows at 1440×900), controls above it; Tested-blind, ablation and tenure move to the method page. Shot 2 is the detail scrolled to the farm plan; shot 3 is the $10K FARM view (94 FARM rows at $10,000 each; top net $128 Bucket CDP; top net-if-launch $438 Stellar DEX; book net $4,750). The verdict filter follows the ticket, so the badges in the view are the $10K verdicts. Predict Fun's $10K nets ($1,681 with odds, $2,536 if it launches) are the board's largest, but it is ROBUST, so it is not in the FARM view. Headline ×2.21 (as built); ×2.08 is the global-only baseline. LOO ×3.69 and hit-rates are global-curve numbers, labelled so.

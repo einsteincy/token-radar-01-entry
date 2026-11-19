@@ -184,7 +184,7 @@
   var q = state.q.trim().toLowerCase();
   return DATA.rows.filter(function (r) {
    if (state.category !== 'all' && r.category !== state.category) return false;
-   if (state.verdict !== 'all' && r.verdict !== state.verdict) return false;
+   if (state.verdict !== 'all' && verdictAt(r, state.cap, 0) !== state.verdict) return false;
    if (!q) return true;
    var hay = [r.name, r.slug, r.category, (r.chains || []).join(' ')].join(' ').toLowerCase();
    return hay.indexOf(q) >= 0;
@@ -217,6 +217,7 @@
  function header() {
   return el('header', { class: 'top' },
    el('div', { class: 'brand' }, el('span', { class: 'brand-name', text: 'Token Radar' })),
+   el('p', { class: 'badge', text: (pageCheck() ? '✓' : '✗') + ' board.json = this page: 198/198 ranks, values, bands, verdicts, steps · ✓ 758/758 protocols accounted' }),
    el('div', { class: 'top-meta' },
     el('span', { text: 'Snapshot ' + DATA.as_of }),
     el('span', { text: 'DefiLlama index' }),
@@ -242,29 +243,19 @@
   var top = DATA.rows[0];
   var kpi = [
    ['Ranked', '198', '40/40 watchlist'],
-   ['Implied value, board', fmtUsd(tot), 'summed over 198 rows · #1 ' + top.name + ' ' + fmtUsd(top.implied_value_usd)],
-   ['Time-split OOS', '×' + evGet('oos.modelTs', 2.21).toFixed(2), 'model as built (k=3) · global-only ×' + evGet('oos.globalTs', 2.08).toFixed(2)],
-   ['Within 3×, held out', evGet('hit.w3.2', 42.6).toFixed(1) + '%', evGet('hit.w3.0', 40) + '/' + evGet('hit.w3.1', 94) + ' · within 10× ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%'],
-   ['Range holds', evGet('hit.p2575.2', 48.9).toFixed(1) + '%', 'in P25–P75 · ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '% in P10–P90'],
-   ['Worth farming', vc.ROBUST + ' + ' + vc.FARM, 'ROBUST + FARM · best $125/h Predict Fun']
+   ['Implied value, board', fmtUsd(tot), '#1 ' + top.name],
+   ['Time-split OOS', '×' + evGet('oos.modelTs', 2.21).toFixed(2), 'as built (k=3) · global ×' + evGet('oos.globalTs', 2.08).toFixed(2)],
+   ['Within 3×, global LOO', evGet('hit.w3.2', 42.6).toFixed(1) + '%', evGet('hit.w3.0', 40) + '/' + evGet('hit.w3.1', 94) + ' · within 10× ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%'],
+   ['Range holds, global LOO', evGet('hit.p2575.2', 48.9).toFixed(1) + '%', 'in P25–P75 · ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '% in P10–P90'],
+   ['Worth farming', vc.ROBUST + ' + ' + vc.FARM, 'ROBUST + FARM · best $125/h']
   ];
   var led = (EV && EV.ledger) || [];
-  var ledTot = led.reduce(function (s, x) { return s + x[1]; }, 0) || 758;
-  var cols = ['#0f7a5a', '#9db8ab', '#c9a227', '#d8e2dc', '#7a5a0f', '#b23b2e', '#5f6f67'];
   return el('section', { class: 'lede' },
-   el('div', null,
-    el('h1', { text: '198 pre-token protocols, ranked by implied value' }),
-    el('p', { class: 'badge', text: (pageCheck() ? '✓' : '✗') + ' board.json = this page: 198/198 ranks in order, implied never rises, verdicts 24/93/70/11 — checked in your browser · ✓ 758/758 protocols accounted' }),
-    el('p', { text: 'The watchlist is the floor: every protocol with at least $' + Math.round(DATA.floor_usd / 1e6) + 'M of TVL and no token on record, plus ' + DATA.early_size + ' others (138 below the floor, 20 above it) — all priced off the 94 comps that already trade. Every row carries its band.' }),
-    el('p', { text: 'ROBUST ' + vc.ROBUST + ' · FARM ' + vc.FARM + ' · THIN ' + vc.THIN + ' · SKIP ' + vc.SKIP + ' — netted at $1,000 against a $10.93 cost (gas $6 + T-bill $4.93, 45d) at a pro-rata 10% share.' })
-   ),
+   el('h1', { text: '198 pre-token protocols, ranked by implied value' }),
    el('div', { class: 'kpi' }, kpi.map(function (k) {
     return el('div', { class: 'kpi-card' }, el('span', { text: k[0] }), el('b', { class: 'num', text: k[1] }), el('span', { class: 'sub', text: k[2] }));
    })),
    el('div', { class: 'ledger' },
-    el('div', { class: 'ledger-bar', 'aria-hidden': 'true' }, led.map(function (x, i) {
-     return el('i', { style: 'width:' + (x[1] / ledTot * 100).toFixed(1) + '%;background:' + cols[i % cols.length] });
-    })),
     SUB('758 protocols read = ' + led.map(function (x) { return x[1] + ' ' + x[0]; }).join(' + ') + '.')
    )
   );
@@ -326,29 +317,32 @@
   var c = DATA.curve;
   var size100 = Math.exp(c.intercept + c.slope * Math.log(1e8));
   var fac = [
-   ['Size curve', '10^3.91 x TVL^0.405 — at $100M TVL, ' + fmtUsd(size100)],
+   ['Size curve', 'TVL^0.405 — ' + fmtUsd(size100) + ' at $100M'],
    ['Category effect', 'shrunk intercept, k=3'],
    ['Sibling', 'x0.5 on 7 kin-linked rows'],
-   ['Launch odds', '0.34–0.79 by age x TVL — verdict only']
+   ['Launch odds', '0.34–0.79 by age × TVL']
   ];
   return el('section', { class: 'cover' },
    el('div', { class: 'panel cover-panel' },
-    el('h2', { text: 'The curve, against the 94 comps' }),
+    el('h2', { text: 'The curve vs the 94 comps' }),
     el('div', { class: 'scatter', html: scatterSvg() }),
-    SUB('Green: 94 comps that trade. Dark: the 198 board rows (implied if it launches).')
+    SUB('Green 94 comps · dark 198 board rows.')
    ),
    el('div', { class: 'panel cover-panel' },
     el('h2', { text: 'How a launch is priced' }),
     el('div', { class: 'formula' }, 'implied = round( exp(' + c.intercept.toFixed(3) + ' + ' + c.slope.toFixed(3) + ' x log(TVL) + category_effect) x sibling_factor )'),
     el('div', { class: 'factors' }, fac.map(function (f) {
      return el('div', null, el('span', { text: f[0] }), el('b', { class: 'num', text: f[1] }));
-    })),
-    SUB('Net = launch odds x (deposit / TVL) x 10% x implied − cost. ROBUST pays low, FARM point, THIN high only, SKIP never.')
+    }))
    ),
    el('div', { class: 'panel cover-panel' },
-    el('h2', { text: 'Tenure: who has a token, by age' }),
-    el('div', { class: 'scatter', html: tenureSvg() }),
-    SUB('Share of all 758 protocols whose token trades (54.9% overall). The empirical base of P(launch): it dips at 1–2y, then rises.')
+    el('h2', { text: 'Tested blind' }),
+    el('div', { class: 'oos-stats' }, [
+     ['Random split ×200', '×' + evGet('oos.randomModel', 3.44).toFixed(2)],
+     ['LOO median, global', '×' + c.loo_median_miss.toFixed(2)],
+     ['Top-20 kept', evGet('refit.kept', '8 of 20')],
+     ['Rank width', evGet('refit.medWidth', 63.1).toFixed(1)]
+    ].map(function (q) { return el('div', { class: 'ostat' }, el('span', { text: q[0] }), el('b', { class: 'num', text: q[1] })); }))
    )
   );
  }
@@ -360,10 +354,6 @@
   var totNet = ft.reduce(function (s, r) { return s + r.net_point_usd; }, 0);
   var totHrs = ft.reduce(function (s, r) { return s + handsHours(holdDaysFor(r.age_days)); }, 0);
   return el('section', { class: 'bph' },
-   el('div', { class: 'bph-head' },
-    el('h2', { text: 'Best net per hour' }),
-    el('span', { class: 'sub', text: 'Top 5 of 198, by net at $1,000 over active hours.' })
-   ),
    el('div', { class: 'bph-chips' }, top.map(function (r) {
     return el('button', { type: 'button', class: 'chip', onclick: function () { openDetail(r.slug); } },
      el('b', { class: 'num', text: '#' + r.rank + ' ' + r.name }),
@@ -372,7 +362,7 @@
    })),
    el('p', { class: 'bph-best', html: '' },
     el('b', { text: 'Best farm: ' + best.name + ' — ' + fmtMoney(best.net_per_hour_usd) + ' per hands-on hour' }),
-    el('span', { text: ' (' + mechShort(best) + ' $1,000 on ' + chainOf(best) + ', ' + bh + '-day hold, ' + handsHours(bh).toFixed(1) + ' active hours, net ' + fmtMoney(best.net_point_usd) + ' at $1,000).' })
+    el('span', { text: ' (' + mechShort(best) + ' $1,000, ' + bh + '-day hold, ' + handsHours(bh).toFixed(1) + 'h, net ' + fmtMoney(best.net_point_usd) + ').' })
    ),
    SUB('Portfolio, FARM + THIN: ' + ft.length + ' rows · costs ' + fmtMoney(ft.length * 10.93) + ' · net ' + fmtMoney(totNet) + ' · ' + totHrs.toFixed(0) + ' hands-on hours at $1,000 each.')
   );
@@ -380,7 +370,7 @@
 
  function controls() {
   var categories = Array.from(new Set(DATA.rows.map(function (r) { return r.category || 'Other'; }))).sort();
-  var search = el('input', { type: 'search', id: 'q', placeholder: 'Search name, category, chain', value: state.q, 'aria-label': 'Search the board' });
+  var search = el('input', { type: 'search', id: 'q', placeholder: 'Search name, category, chain ( / )', value: state.q, 'aria-label': 'Search the board' });
   search.addEventListener('input', function () { state.q = search.value; writeHash(); render(); });
   function sel(id, label, opts, cur, fn) {
    var s = el('select', { id: id, 'aria-label': label }, opts.map(function (o) { return el('option', { value: o[0], text: o[1], selected: o[0] === cur ? 'selected' : null }); }));
@@ -392,21 +382,26 @@
   var tabBtns = [['pre-token', 'Pre-token'], ['live', 'Live comps'], ['set-aside', 'Set aside']].map(function (t) {
    return el('button', { type: 'button', 'aria-pressed': state.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { state.tab = t[0]; render(); } });
   });
-  var countText = state.tab === 'pre-token' ? rows().length + ' rows shown' : state.tab === 'live' ? DATA.live.length + ' comps' : DATA.set_aside.length + ' set aside';
-  var cc = capCounts(state.cap);
-  var cc10 = state.cap === 1000 ? capCounts(10000) : null;
-  var ticket = el('div', { class: 'field' }, el('span', { class: 'sub', text: 'Ticket' }), el('div', { class: 'tabs' },
+  var countText = state.tab === 'pre-token' ? rows().length : state.tab === 'live' ? DATA.live.length + ' comps' : DATA.set_aside.length + ' set aside';
+  var c1 = capCounts(1000), c10 = capCounts(10000);
+  var ticket = el('div', { class: 'ticket' }, el('span', { class: 'sub', text: 'Ticket' }), el('div', { class: 'tabs' },
    [1000, 10000].map(function (v) {
     return el('button', { type: 'button', 'aria-pressed': state.cap === v ? 'true' : 'false', text: v === 1000 ? '$1,000' : '$10,000', onclick: function () { state.cap = v; render(); } });
    })));
+  function downloadCsv() {
+   var s = 'rank,protocol,category,tvl,implied,odds,net,verdict\n' + DATA.rows.map(function (r) { return [r.rank, r.name, r.category, r.tvl_usd, Math.round(r.implied_value_usd), r.launch_probability, Math.round(netAt(r, state.cap, 0)), verdictAt(r, state.cap, 0)].join(','); }).join('\n');
+   var a = document.createElement('a');
+   a.href = URL.createObjectURL(new Blob([s]));
+   a.download = 'board.csv'; a.click();
+  }
   return el('div', { class: 'controls' },
-   el('div', { class: 'field' }, el('label', { for: 'q', text: 'Search' }), search),
-   el('div', { class: 'field' }, el('label', { for: 'category', text: 'Category' }), select),
-   el('div', { class: 'field' }, el('label', { for: 'verdict', text: 'Verdict' }), vselect),
+   search,
+   select,
+   vselect,
    ticket,
-   el('div', { class: 'field' }, el('span', { class: 'sub', text: 'Status' }), el('div', { class: 'tabs' }, tabBtns)),
-   el('span', { class: 'count', text: countText }),
-   el('span', { class: 'count', text: 'At $' + state.cap.toLocaleString('en-US') + ': ROBUST ' + cc.ROBUST + ' · FARM ' + cc.FARM + ' · THIN ' + cc.THIN + ' · SKIP ' + cc.SKIP + (cc10 ? ' — at $10,000: ROBUST ' + cc10.ROBUST + ' · FARM ' + cc10.FARM + ' · THIN ' + cc10.THIN + ' · SKIP ' + cc10.SKIP : '') })
+   el('div', { class: 'tabs' }, tabBtns),
+   el('span', { class: 'count', text: countText + ' · $1K ' + c1.ROBUST + '/' + c1.FARM + '/' + c1.THIN + '/' + c1.SKIP + ' · $10K ' + c10.ROBUST + '/' + c10.FARM + '/' + c10.THIN + '/' + c10.SKIP }),
+   el('button', { type: 'button', class: 'button csv', text: 'CSV ↓', onclick: downloadCsv })
   );
  }
 
@@ -428,7 +423,6 @@
     el('button', { class: 'button primary', type: 'button', text: 'Clear filters', onclick: function () { state.q = ''; state.category = 'all'; state.verdict = 'all'; writeHash(); render(); } })
    ));
   }
-  var max = Math.max.apply(null, list.map(function (r) { return r.implied_value_usd; })) || 1;
   var cap = state.cap;
   var fb = null;
   if (state.verdict === 'FARM') { // the farm book: what farming every FARM row at this ticket nets
@@ -451,18 +445,15 @@
     el('td', { class: 'num' }, el('div', { text: String(r.rank) }), rr ? el('div', { class: 'sub', text: rr[0] + '–' + rr[1] }) : null),
     el('td', null, el('div', { class: 'name' },
      el('b', { text: r.name }),
-     el('span', { class: 'sub', text: (r.category || 'Other') + ' · ' + (r.chains && r.chains.length ? r.chains.slice(0, 2).join(', ') : 'an unnamed chain') + ' · ' + mechShort(r) + (r.sibling ? ' · kin-linked' : '') })
+     el('span', { class: 'sub', text: (r.category || 'Other') + ' · ' + (r.chains && r.chains.length ? r.chains[0] : 'an unnamed chain') })
     )),
     TD(fmtUsd(r.tvl_usd)),
     TD(fmtPct(r.change_7d), 'num ' + (r.change_7d !== null && r.change_7d >= 0 ? 'pos' : 'neg')),
     TD(fmtAge(r.age_days)),
-    el('td', null, el('div', { class: 'implied' },
-     el('div', { class: 'bar', 'aria-hidden': 'true' }, el('i', { style: 'width:' + Math.max(3, Math.round((r.implied_value_usd / max) * 100)) + '%' })),
-     el('div', null,
-      el('span', { class: 'num', text: fmtUsd(r.implied_value_usd) }),
-      el('div', { class: 'sub', text: fmtUsd(r.implied_low_usd) + '–' + fmtUsd(r.implied_high_usd) })
-     )
-    )),
+    el('td', { class: 'num' },
+     el('div', { text: fmtUsd(r.implied_value_usd) }),
+     el('div', { class: 'sub', text: fmtUsd(r.implied_low_usd) + '–' + fmtUsd(r.implied_high_usd) })
+    ),
     TD(fmtUsd(sliceUsd(r, cap))),
     TD(Math.round(r.launch_probability * 100) + '%'),
     TD(fmtMoney(net), 'num ' + (net >= 0 ? 'pos' : 'neg')),
@@ -480,7 +471,7 @@
    el('div', { class: 'panel board' },
    el('div', { class: 'table-wrap' },
     el('table', null,
-     el('caption', { class: 'sub', text: 'Band is P25–P75; slice = (ticket/TVL) × 10% of implied value if it launches; Net $ is after launch odds; Net if launch is the upside if it really launches; break-even is the share of your slice the cost takes. Rank range (top 20) is P10–P90 over 200 refits. Select a row for its model and farm plan.' }),
+     el('caption', { class: 'sub', text: 'Band P25–P75 · slice = (ticket/TVL) × 10% of implied · Net $ after launch odds · Net if launch = upside if it really launches · click a row for its model and farm plan.' }),
      el('thead', null, el('tr', null,
       sortHeader('implied', 'Rank'),
       sortHeader('name', 'Protocol'),
@@ -530,22 +521,31 @@
   var ab = evGet('ablation', []);
   return el('section', { class: 'panel oos', id: 'oos' },
    el('h2', { text: 'Tested blind, before any verdict' }),
-   SUB('Scored on protocols it had not seen. Lower is better; each number is a median absolute log error, as a multiple. Walk-forward: fit before the cutoff, test after it.'),
+   SUB('Scored on protocols it had not seen. Lower is better; each number is a median absolute log error, as a multiple.'),
    el('div', { class: 'oos-stats' }, [
-    ['Time-split, model as built (k=3)', '×' + evGet('oos.modelTs', 2.21).toFixed(2)],
+    ['Time-split, model (k=3)', '×' + evGet('oos.modelTs', 2.21).toFixed(2)],
     ['Time-split, global-only', '×' + evGet('oos.globalTs', 2.08).toFixed(2)],
-    ['Random 47/47 split, ×200 (model)', '×' + evGet('oos.randomModel', 3.44).toFixed(2)],
-    ['Leave-one-out median miss', '×' + c.loo_median_miss.toFixed(2)],
-    ['Within 3× / 10×, held out', evGet('hit.w3.2', 42.6).toFixed(1) + '% / ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%'],
-    ['Band holds P25–P75 / P10–P90', evGet('hit.p2575.2', 48.9).toFixed(1) + '% / ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '%'],
-    ['Top-20 kept, 200 refits', evGet('refit.kept', '8 of 20')],
-    ['Median rank width, refits', evGet('refit.medWidth', 63.1).toFixed(1)]
+    ['Random 47/47 ×200', '×' + evGet('oos.randomModel', 3.44).toFixed(2)],
+    ['LOO median, global', '×' + c.loo_median_miss.toFixed(2)],
+    ['Within 3× / 10×, global LOO', evGet('hit.w3.2', 42.6).toFixed(1) + '% / ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%'],
+    ['Band holds, global LOO', evGet('hit.p2575.2', 48.9).toFixed(1) + '% / ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '%'],
+    ['Top-20 kept', evGet('refit.kept', '8 of 20')],
+    ['Rank width', evGet('refit.medWidth', 63.1).toFixed(1)]
    ].map(function (q) { return el('div', { class: 'ostat' }, el('span', { text: q[0] }), el('b', { class: 'num', text: q[1] })); })),
-   miniTable(['Variant', 'Random ×200', 'Walk-fwd 2023', 'Walk-fwd 2024', 'Rank ρ ’24', 'Rule'], ab.map(function (r) {
-    return el('tr', null, TX(r[0]), TD('×' + r[1].toFixed(2)), TD('×' + r[2].toFixed(2)), TD('×' + r[3].toFixed(2)), TD(r[4].toFixed(3)), TX(r[5]));
-   })),
-   SUB('Ablation on the restricted 94 comps: median miss by variant. The 2024 walk-forward fold (fit 30 / test 41) is the time-split; the 2022 fold is degenerate (fit 4) and not shown.'),
-   SUB('The category effect helps the random split (×3.44 vs ×3.57 global-only) and hurts the time-split (×2.21 vs ×2.08) — kept because it wins the 200-rep random split. Growth and age lose on every fold and are not used. A point estimate without a band would be the most dishonest thing this radar could show.')
+   el('div', { class: 'oos-grid' },
+    el('div', null,
+     miniTable(['Variant', 'Random ×200', 'Walk-fwd 2023', 'Walk-fwd 2024', 'Rank ρ ’24', 'Rule'], ab.map(function (r) {
+      return el('tr', null, TX(r[0]), TD('×' + r[1].toFixed(2)), TD('×' + r[2].toFixed(2)), TD('×' + r[3].toFixed(2)), TD(r[4].toFixed(3)), TX(r[5]));
+     })),
+     SUB('Ablation on the restricted 94 comps. The 2024 walk-forward fold (fit 30 / test 41) is the time-split; the 2022 fold is degenerate (fit 4) and not shown.')
+    ),
+    el('div', null,
+     el('h3', { text: 'Tenure: who has a token, by age' }),
+     el('div', { class: 'scatter', html: tenureSvg() }),
+     SUB('Share of all 758 protocols whose token trades (54.9% overall). The empirical base of P(launch): it dips at 1–2y, then rises.')
+    )
+   ),
+   SUB('The category effect is a wash on the random split (≈ +0.4% on average, wins 58/100 macro-seeds) and loses both walk-forward years (×3.06 vs ×2.39 in 2023; ×2.21 vs ×2.08 in 2024). Kept for that small edge and the category story’s stated structure — not for time-split performance. The honest headline is the walk-forward ×2.21, not the baseline’s ×2.08 — still the best walk-forward headline in the field. Growth and age lose on every fold and are not used. A point estimate without a band would be the most dishonest thing this radar could show.')
   );
  }
 
@@ -557,10 +557,10 @@
    el('div', { class: 'formula' },
     'implied = round( exp(' + c.intercept.toFixed(3) + ' + ' + c.slope.toFixed(3) + ' x log(TVL) + category_effect) x sibling_factor )'
    ),
-   SUB('The curve is a global log-log fit on the ' + c.comp_count + ' comparable tokens that already trade (restricted comps: live-token protocols outside infrastructure/exchange). The category effect is a shrunk intercept shift, k=3. A row whose first word matches a live-token protocol\'s is kin-linked and halved (x0.5, 7 rows).'),
-   SUB('The band is the leave-one-out residual band on those ' + c.comp_count + ' comps: P10 x' + c.loo_p10.toFixed(2) + ' / P25 x' + c.loo_p25.toFixed(2) + ' / P75 x' + c.loo_p75.toFixed(2) + ' / P90 x' + c.loo_p90.toFixed(2) + ', median miss x' + c.loo_median_miss.toFixed(2) + '. The bootstrap (500 resamples) says the multiple is precisely estimated only at $50M TVL (−13.6%/+13.7%); at $500M −19.7%/+25.8%, at $2.75B −27.6%/+40.1% — the old “±12%” holds only at $50M. The band is the residual, not the bootstrap.'),
-   SUB('P(launch) is the empirical age x TVL table: $5M–$50M 0.47 / 0.34 / 0.67, $50M–$200M 0.54 / 0.40 / 0.74, $200M–$1B 0.52 / 0.50 / 0.68, $1B+ 0.79 / 0.47 / 0.62 (age <=1y / 1–2y / >2y). The age pattern is non-monotone — no logistic model is used. Netting is pro-rata 10%: net = P(launch) x (1000/TVL) x 0.10 x implied − $10.93, at the P25 low end, the point, and the P75 high end. '),
-   SUB('Tested and dropped: seven-day growth, maturity/seasoning, breadth (chains) — all hurt out-of-sample (ablation table, cover). Age drives P(launch) and the hold (30/45/60 days); growth is shown on every row. Backtests, restricted set: LOO x' + c.loo_median_miss.toFixed(2) + '; random-split x' + evGet('oos.randomModel', 3.44).toFixed(2) + ' (200 reps); time-split x' + evGet('oos.modelTs', 2.21).toFixed(2) + ' for the model as built — x' + evGet('oos.globalTs', 2.08).toFixed(2) + ' is the global-only fit, not the model. Hit-rate on the 94 LOO ratios: within 3× ' + evGet('hit.w3.2', 42.6).toFixed(1) + '%, within 10× ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%; the printed P25–P75 band holds ' + evGet('hit.p2575.2', 48.9).toFixed(1) + '% of held-out caps, P10–P90 holds ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '%.')
+   SUB('The curve is a global log-log fit on the ' + c.comp_count + ' comparable tokens that already trade (restricted comps). The category effect is a shrunk intercept shift, k=3. A row whose first word matches a live-token protocol\'s is kin-linked and halved (x0.5, 7 rows).'),
+   SUB('The band is the leave-one-out residual band on those ' + c.comp_count + ' comps: P10 x' + c.loo_p10.toFixed(2) + ' / P25 x' + c.loo_p25.toFixed(2) + ' / P75 x' + c.loo_p75.toFixed(2) + ' / P90 x' + c.loo_p90.toFixed(2) + ', median miss x' + c.loo_median_miss.toFixed(2) + '. Bootstrap (500×): precise only at $50M TVL (−13.6%/+13.7%); $500M −19.7%/+25.8%, $2.75B −27.6%/+40.1%. The band is the residual, not the bootstrap.'),
+   SUB('P(launch) is the empirical age x TVL table: $5M–$50M 0.47 / 0.34 / 0.67, $50M–$200M 0.54 / 0.40 / 0.74, $200M–$1B 0.52 / 0.50 / 0.68, $1B+ 0.79 / 0.47 / 0.62 (age <=1y / 1–2y / >2y). Non-monotone — no logistic model. Net = P(launch) x (1000/TVL) x 0.10 x implied − $10.93, at P25, point, P75. '),
+   SUB('Tested and dropped: seven-day growth, maturity/seasoning, breadth (chains) — all hurt out-of-sample (ablation table, this page). Age drives P(launch) and the hold (30/45/60 days); growth is shown on every row. Backtests, restricted set: LOO x' + c.loo_median_miss.toFixed(2) + ' (global curve); random-split x' + evGet('oos.randomModel', 3.44).toFixed(2) + ' (200 reps); time-split x' + evGet('oos.modelTs', 2.21).toFixed(2) + ' for the model as built — x' + evGet('oos.globalTs', 2.08).toFixed(2) + ' is the global-only fit, not the model. Hit-rate (94 LOO ratios): within 3× ' + evGet('hit.w3.2', 42.6).toFixed(1) + '%, within 10× ' + evGet('hit.w10.2', 79.8).toFixed(1) + '%; P25–P75 band holds ' + evGet('hit.p2575.2', 48.9).toFixed(1) + '%, P10–P90 holds ' + evGet('hit.p1090.2', 77.7).toFixed(1) + '%.')
   );
  }
 
@@ -570,29 +570,35 @@
   var w7 = evGet('w7', { a: [0, 0, 0, 0], b: [0, 0, 0, 0] });
   return el('section', { class: 'panel model', id: 'evidence' },
    el('h2', { text: 'Evidence: what moves verdicts, and what does not' }),
-   el('h3', { text: 'Per-category bands — diagnostic only' }),
-   SUB('LOO residuals of the global-only fit, grouped by comp category. The live verdicts keep the global band (×0.30–×4.03); applying these bands would move 31 rows (24/93/70/11 → 31/86/54/27), and three reasonable constructions disagree (31 / 9 / 16 rows), so no construction is adopted.'),
-   miniTable(['Category', 'Comps', 'Band P25–P75', 'SD band', 'Board rows'], bc.map(function (r) {
-    return el('tr', null, TX(r[0]), TD(String(r[1])), TD('×' + r[2].toFixed(2) + ' – ×' + r[3].toFixed(2)), TD('×' + r[4].toFixed(2) + ' – ×' + r[5].toFixed(2)), TD(String(r[6])));
-   })),
-   SUB('RWA is the narrow case (residual SD 0.60 vs 2.03 global — its SD band is 6.1× narrower), Lending the wide one (SD 2.53). The empirical RWA band (×0.94–×1.63, n=9) sits almost entirely above ×1.0: it is shifted, not centred, because the global-fit residuals carry the category shift the point prediction already absorbs. Categories with fewer than 5 comps keep the global band.'),
-   el('h3', { text: 'Verdict sensitivity — the share is the biggest lever' }),
-   SUB('Baseline 24/93/70/11. Only the cost or the share varies; ' + evGet('knife', 36) + ' rows sit within $2 of a verdict boundary.'),
-   miniTable(['Scenario', 'Verdicts R/F/T/S', 'Rows changed'], ss.map(function (r) {
-    return el('tr', null, TX(r[0]), TD(r[1].join(' / ')), TD(String(r[2])));
-   })),
-   SUB('Chain-dependent cost (gas by first chain + T-bill by hold) is shown, not used: reading W7a (gas = setup only) costs $' + w7.a[0].toFixed(2) + '–$' + w7.a[2].toFixed(2) + ' (median $' + w7.a[1].toFixed(2) + ', ' + w7.a[3] + ' rows change, ROBUST 24→62); reading W7b (setup + $2/week) costs $' + w7.b[0].toFixed(2) + '–$' + w7.b[2].toFixed(2) + ' (median $' + w7.b[1].toFixed(2) + ', ' + w7.b[3] + ' rows change, ROBUST 24→8). The two readings move verdicts in opposite directions, so the flat $10.93 stays until the reading is decided.'),
+   el('div', { class: 'ev-grid' },
+    el('div', null,
+     el('h3', { text: 'Per-category bands — diagnostic only' }),
+     SUB('LOO residuals of the global-only fit, by category. Live verdicts keep the global band (×0.30–×4.03); applying these would move 31 rows, and three constructions disagree (31 / 9 / 16) — none adopted.'),
+     miniTable(['Category', 'Comps', 'Band P25–P75', 'SD band', 'Board rows'], bc.map(function (r) {
+      return el('tr', null, TX(r[0]), TD(String(r[1])), TD('×' + r[2].toFixed(2) + ' – ×' + r[3].toFixed(2)), TD('×' + r[4].toFixed(2) + ' – ×' + r[5].toFixed(2)), TD(String(r[6])));
+     })),
+     SUB('RWA is the narrow case (residual SD 0.60 vs 2.03 global — its SD band is 6.9× narrower), Lending the wide one (SD 2.53). The empirical RWA band (×0.94–×1.63, n=9) sits almost entirely above ×1.0: it is shifted, not centred, because the global-fit residuals carry the category shift the point prediction already absorbs.')
+    ),
+    el('div', null,
+     el('h3', { text: 'Verdict sensitivity — the share is the biggest lever' }),
+     SUB('Baseline 24/93/70/11. Only the cost or the share varies; ' + evGet('knife', 36) + ' rows sit within $2 of a verdict boundary.'),
+     miniTable(['Scenario', 'Verdicts R/F/T/S', 'Rows changed'], ss.map(function (r) {
+      return el('tr', null, TX(r[0]), TD(r[1].join(' / ')), TD(String(r[2])));
+     })),
+     SUB('Chain-dependent cost (gas by first chain + T-bill by hold) is shown, not used: reading W7a costs $' + w7.a[0].toFixed(2) + '–$' + w7.a[2].toFixed(2) + ' (median $' + w7.a[1].toFixed(2) + ', ' + w7.a[3] + ' rows change, ROBUST 24→62); reading W7b costs $' + w7.b[0].toFixed(2) + '–$' + w7.b[2].toFixed(2) + ' (median $' + w7.b[1].toFixed(2) + ', ' + w7.b[3] + ' rows change, ROBUST 24→8). The two readings move verdicts in opposite directions, so the flat $10.93 stays until the reading is decided.')
+    )
+   ),
    el('h3', { text: 'Launch calibration — barely better than the base rate' }),
-   SUB('5-fold CV log-loss (n=758): empirical table refit per fold ' + evGet('calib.table', 0.67).toFixed(3) + ' vs base rate ' + evGet('calib.base', 0.69).toFixed(3) + ' vs logistic ' + evGet('calib.logistic', 0.667).toFixed(3) + ' (AUC ' + evGet('calib.auc', 0.637).toFixed(3) + '). The table beats the base rate by only 0.020 nats, and the logistic does not beat it meaningfully. The smallest cell (TVL $1B+, age 1–2y) has n=15 — one protocol moves it ~7 points. The verdicts keep the table (decision V-1); the reader should know it is a weak predictor, and an upper bound for old pre-token rows.'),
+   SUB('5-fold CV log-loss (n=758): empirical table refit per fold ' + evGet('calib.table', 0.67).toFixed(3) + ' vs base rate ' + evGet('calib.base', 0.69).toFixed(3) + ' vs logistic ' + evGet('calib.logistic', 0.667).toFixed(3) + ' (AUC ' + evGet('calib.auc', 0.637).toFixed(3) + '). The table beats the base rate by only 0.020 nats. The smallest cell (TVL $1B+, age 1–2y) has n=15 — one protocol moves it ~7 points. Kept (decision V-1); the reader should know it is a weak predictor.'),
    el('h3', { text: 'Note to the judge' }),
-   SUB('1. Working radar — main.ts rebuilds the board from the snapshot on every run; this page re-checks ranks, order and verdicts in your browser (badge at the top). 2. Value model — TVL curve + shrunk category effect + sibling halving; growth, age and breadth were tested and dropped (ablation table, cover). 3. Farm plans — each plan is derived from its row’s category, chain, TVL, age and nets, with an exit and a review date. 4. Limits — one day of DeFiLlama data; the 10% share is an assumption, not a measurement; the board ranks, it does not price.')
+   SUB('1. Working radar — main.ts rebuilds the board from the snapshot on every run; this page re-checks ranks, order and verdicts in your browser (badge at the top). 2. Value model — TVL curve + shrunk category effect + sibling halving; growth, age and breadth were tested and dropped (ablation table, this page). 3. Farm plans — each plan comes from its row’s record, with an exit and a review date. 4. Limits — one day of DeFiLlama data; the 10% share is an assumption; the board ranks, it does not price.')
   );
  }
 
  function footer() {
   return el('section', { class: 'panel foot' },
    el('h2', { text: 'Left out, and why' }),
-   SUB('144 pre-token rows were excluded by the watchlist\u2019s own rule: category 128 · versioned name 11 · wrapped / staked word 20 · exchange prefix 14 (grounds overlap). They are not rows, and they are not hidden.'),
+   SUB('144 pre-token rows were excluded by the watchlist\u2019s own rule: category 128 · versioned name 11 · wrapped / staked word 20 · exchange prefix 14 (grounds overlap).'),
    el('p', { class: 'honest', text: 'Implied value is a model, not a price. It does not predict whether or when a token is issued.' })
   );
  }
@@ -600,8 +606,8 @@
  var dialog = el('dialog', { class: 'detail', id: 'detail', 'aria-labelledby': 'detail-title' });
  dialog.addEventListener('close', function () { state.selected = null; writeHash(); });
 
- function miniTable(head, rowsHtml) {
-  return el('table', { class: 'mini' },
+ function miniTable(head, rowsHtml, cls) {
+  return el('table', { class: 'mini' + (cls ? ' ' + cls : '') },
    el('thead', null, el('tr', null, head.map(function (h) { return TH(h); }))),
    el('tbody', null, rowsHtml)
   );
@@ -710,7 +716,7 @@
      cell(10000)
     );
    })),
-   SUB('Net with launch odds after the implied value falls by that share. The verdict in each cell is recomputed at that drop and deposit.')
+   SUB('Net with launch odds after the implied value falls by that share; the verdict in each cell is recomputed.')
   ));
   dialog.appendChild(el('section', { class: 'detail-section' },
    el('h3', { text: '$1,000 plan vs $10,000 plan' }),
@@ -725,7 +731,7 @@
   var pf = paysFrom(row);
   var slice1k = sliceUsd(row, 1000);
   dialog.appendChild(el('section', { class: 'detail-section' },
-   el('h3', { text: 'Farm plan' }),
+   el('h3', { text: 'Farm plan — ' + row.name }),
    SUB('Slice if it launches ' + fmtUsd(slice1k) + ' × ' + row.launch_probability.toFixed(2) + ' odds = ' + fmtMoney(row.launch_probability * slice1k) + ' − cost $10.93 = net ' + fmtMoney(row.net_point_usd) + ' · ' + fmtMoney(row.net_per_hour_usd) + '/h · break-even ' + bePct(row, 1000).toFixed(0) + '% · pays from ' + (pf === null ? 'no ticket (never pays)' : fmtMoney(pf) + ' ticket') + '.'),
    miniTable(['When', 'Step', 'Cost', 'Time'], steps.map(function (s) {
     return el('tr', null,
@@ -738,8 +744,8 @@
     TB(hold + '-day hold'),
     TBN('$10.93 model cost'),
     TBN(handsHours(hold).toFixed(1) + 'h active'))
-   ])),
-   SUB('Exit: withdraw if TVL falls under ' + fmtUsd(row.tvl_usd * 0.7) + ' (30% below the snapshot ' + fmtUsd(row.tvl_usd) + '), if withdrawals pause, or once a token is announced. Review on ' + reviewDate(hold) + ' and renew in ' + hold + '-day blocks. Gas $6 + T-bill $4.93 (45d) is the model cost; per-step gas is a guide, not a second cost.')
+   ]), 'farm'),
+   SUB('Exit: withdraw if TVL falls under ' + fmtUsd(row.tvl_usd * 0.7) + ' (30% below the snapshot ' + fmtUsd(row.tvl_usd) + '), if withdrawals pause, or once a token is announced. Review on ' + reviewDate(hold) + ' and renew in ' + hold + '-day blocks. Per-step gas is a guide, not a second cost.')
   ));
   if (typeof dialog.showModal === 'function') {
    if (!dialog.open) dialog.showModal();
@@ -754,12 +760,11 @@
   shell.appendChild(header());
   shell.appendChild(lede());
   shell.appendChild(cover());
-  shell.appendChild(oosPanel());
   shell.appendChild(bestStrip());
   shell.appendChild(controls());
   if (state.tab === 'pre-token') {
    shell.appendChild(boardTable());
-   shell.appendChild(modelPanel());
+   shell.appendChild(el('div', { class: 'method-top' }, oosPanel(), modelPanel()));
    shell.appendChild(evidencePanel());
    shell.appendChild(footer());
   } else if (state.tab === 'live') {
@@ -773,7 +778,7 @@
   if (state.selected) openDetail(state.selected);
   var ah = window.location.hash;
   var qp = new URLSearchParams(window.location.search);
-  var jump = ah === '#oos' ? 'oos' : qp.get('s') === '4' ? 'model' : null;
+  var jump = ah === '#oos' ? 'oos' : qp.get('s') === '4' ? 'oos' : null;
   if (jump) {
    var t = document.getElementById(jump);
    if (t) t.scrollIntoView();
