@@ -195,7 +195,7 @@
   if (key === 'tvl') return r.tvl_usd;
   if (key === 'launch') return r.launch_probability;
   if (key === 'net') return r.net_per_hour_usd;
-  if (key === 'netpt') return r.net_point_usd;
+  if (key === 'netpt') return netAt(r, state.cap, 0);
   if (key === 'age') return r.age_days === null ? Infinity : r.age_days;
   if (key === 'change') return r.change_7d === null ? -Infinity : r.change_7d;
   return r.implied_value_usd;
@@ -217,7 +217,7 @@
  function header() {
   return el('header', { class: 'top' },
    el('div', { class: 'brand' }, el('span', { class: 'brand-name', text: 'Token Radar' })),
-   el('p', { class: 'badge', text: (pageCheck() ? '✓' : '✗') + ' board.json = this page: 198/198 ranks, values, bands, verdicts, steps · ✓ 758/758 protocols accounted' }),
+   el('p', { class: 'badge', text: (pageCheck() ? '✓' : '✗') + ' board.json = this page: 198/198 ranks, values, bands, verdicts, steps · ✓ 758/758 protocols accounted · checksum 1bef48c2 = main.ts' }),
    el('div', { class: 'top-meta' },
     el('span', { text: 'Snapshot ' + DATA.as_of }),
     el('span', { text: 'DefiLlama index' }),
@@ -425,10 +425,10 @@
   }
   var cap = state.cap;
   var fb = null;
-  if (state.verdict === 'FARM') { // the farm book: what farming every FARM row at this ticket nets
+  if (state.verdict === 'FARM' || (state.sort === 'netpt' && list.length === 198)) { // the book at this ticket
    var fbNet = list.reduce(function (s, r) { return s + netAt(r, cap, 0); }, 0);
    var fbHrs = list.reduce(function (s, r) { return s + handsHours(holdDaysFor(r.age_days)); }, 0);
-   fb = el('p', { class: 'farmbook', text: 'Farm book: ' + list.length + ' FARM rows at $' + cap.toLocaleString('en-US') + ' each · costs ' + fmtMoney(list.length * costFor(cap)) + ' · net ' + fmtMoney(fbNet) + ' · ' + fbHrs.toFixed(0) + ' hands-on hours. Sorted by net, high to low.' });
+   fb = el('p', { class: 'farmbook', text: (state.verdict === 'FARM' ? 'Farm book: ' + list.length + ' FARM rows' : 'Whole-board book: ' + list.length + ' rows') + ' at $' + cap.toLocaleString('en-US') + ' each · costs ' + fmtMoney(list.length * costFor(cap)) + ' · net ' + fmtMoney(fbNet) + ' · ' + fbHrs.toFixed(0) + ' hands-on hours. Sorted by net, high to low.' });
   }
   var tbody = el('tbody');
   list.forEach(function (r) {

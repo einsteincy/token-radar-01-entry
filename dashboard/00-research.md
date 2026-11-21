@@ -44,8 +44,7 @@ P10–P90 rank range for top-20 rows (Predict Fun 2–143). Per-category bands a
 global), but its empirical band
 sits almost entirely above x1.0. Three constructions would move 31, 9 and 16 rows; none
 is adopted. Bootstrap (500 resamples): precise only at $50M (−13.6%/+13.7%); $500M
-−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; `entry/evidence.json`). Two runs write identical bytes. The
-old "±12%" holds only at $50M.
+−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; `entry/evidence.json`). Two runs write identical bytes.
 
 ## 5. The launch base rate
 
@@ -95,8 +94,7 @@ Model, rows and verdicts unchanged (24/93/70/11). Evidence only — rank #12 of 
 - **Attribution correction.** The headline x2.08 quoted since P2 is the GLOBAL-ONLY fit
 on the time-split; the model as built scores x2.21 (rank ρ 0.301 vs 0.313). The cover
 quotes x2.21 for the model, x2.08 as global-only. The "±12%" holds only at $50M (§4); calibration is the refit 0.670, not the in-sample 0.6527 (§5).
-- **Cover.** KPI strip (198 ranked · $2.30B total implied · time-split x2.21 ·
-within-3x 42.6% · range holds 48.9% · 24 ROBUST + 93 FARM), the 758 ledger as a bar, a
+- **Cover.** KPI strip, the 758 ledger as a bar, a
 tenure chart, the OOS panel with a walk-forward ablation table, the scatter plots 198 board rows beside 94 comps. A $1,000/$10,000 ticket toggle recomputes nets and verdicts; the board gains a "Net if launch" column and P10–P90 rank ranges for
 top-20 rows.
 - **Detail + model page.** The factor chain shows running dollars and the category's n
@@ -109,4 +107,7 @@ gain MODEL and MISS columns; the model page shows per-category bands, verdict se
 
 ## 11. P4 (board-first cover, 19 Nov 2026)
 
-Model, rows and verdicts unchanged (24/93/70/11). Layout only: cover is KPI strip + one evidence row + board (≥8 rows at 1440×900), controls above it; Tested-blind, ablation and tenure move to the method page. Shot 2 is the detail scrolled to the farm plan; shot 3 is the $10K FARM view (94 FARM rows at $10,000 each; top net $128 Bucket CDP; top net-if-launch $438 Stellar DEX; book net $4,750). The verdict filter follows the ticket, so the badges in the view are the $10K verdicts. Predict Fun's $10K nets ($1,681 with odds, $2,536 if it launches) are the board's largest, but it is ROBUST, so it is not in the FARM view. Headline ×2.21 (as built); ×2.08 is the global-only baseline. LOO ×3.69 and hit-rates are global-curve numbers, labelled so.
+Model, rows and verdicts unchanged (24/93/70/11). Layout only: cover is KPI strip + one evidence row + board (≥8 rows at 1440×900), controls above it; Tested-blind, ablation and tenure move to the method page. Shot 2 is the detail scrolled to the farm plan; shot 3 was the $10K FARM view (94 FARM rows at $10,000 each; top net $128 Bucket CDP; top net-if-launch $438 Stellar DEX; book net $4,750). The verdict filter follows the ticket, so the badges in the view are the $10K verdicts. Predict Fun's $10K nets ($1,681 with odds, $2,536 if it launches) are the board's largest, but it was ROBUST, so it was not in the FARM view.
+
+## 12. P5 (21 Nov 2026)
+Shot 3 is all rows at $10,000 by net (Predict Fun tops it: $1,681 / $2,536). Book line is the whole board (198 rows · $10,952 · $24,812 · 303 h). Cover shows 10 rows; badge has the main.ts checksum. Model unchanged.
