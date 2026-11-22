@@ -2,8 +2,8 @@
 //
 // The program reads the sealed snapshot from /input/snapshot.json (or --input <file|dir>), scores every
 // genuinely pre-token protocol (the clean board) with the round-2 model in lib/model.ts — global
-// log-log on the restricted 94 comps, a shrunk (k=3) category intercept, a x0.5 sibling factor on
-// kin-linked rows, an LOO-residual band, a corrected empirical launch-probability table, and
+// log-log on the restricted 94 comps, a shrunk (k=3) category intercept, no kin discount since P6
+// (the x0.5 sibling factor was removed 22 Nov 2026), an LOO-residual band, a corrected empirical
 // pro-rata 10% netting into four verdicts (ROBUST / FARM / THIN / SKIP) — writes the ranked board
 // to /output/board.json, and copies this repository's dashboard/ and screenshots/ to /output.
 // Last, it writes /output/dossier.json, the summary the judge reads, with the vendored make.fun
