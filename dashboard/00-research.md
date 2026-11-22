@@ -22,12 +22,12 @@ it — flagged, not hidden (Sentora $2,758M, Polymarket $320M), probably by `par
 
 ## 3. The model
 
-Implied value = round(exp(8.998 + 0.405 x log(TVL) + category_effect) x sibling_factor).
+Implied value = round(exp(8.998 + 0.405 x log(TVL) + category_effect)).
 Curve: global log-log fit on the restricted 94 comps. Intercept 8.998, slope 0.405.
 R-squared 0.103, residual SD 1.99 log in-sample (2.03 leave-one-out). Category effect: shrunk intercept shift, k=3.
 Only 76 of 198 rows sit in categories with 5+ comps; 20 with 3-4, 84 with 1-2, 18 with none
 (effect 0). Risk Curators (34 rows) rests on one comp (x1.56 from a single residual);
-each detail view shows the row's category n and mean residual. Sibling x0.5 on 7 rows.
+each detail view shows the row's category n and mean residual. Kin discount removed in P6 (§13).
 Tested and dropped (all hurt out-of-sample): seven-day growth,
 maturity/seasoning, breadth / chains. Growth stays as a column; age drives P(launch).
 
@@ -39,12 +39,12 @@ x2.08 (§10 — x2.08 is not the model's score). Walk-forward: 2023 (fit 17 / te
 global x2.39 vs model x3.06; 2024 (fit 30 / test 41) global x2.08 vs model x2.21, rank ρ
 0.313 vs 0.301. The 2022 fold (fit 4) is degenerate. The category effect is a wash on the random split (≈ +0.4% on average, wins 58/100 macro-seeds) and hurts the time-split; kept for that small edge and the category story's stated structure — not for time-split performance. Hit-rate on the 94 LOO ratios: within 3x 42.6%, within 10x 79.8%; the printed P25–P75
 band holds 48.9%, P10–P90 holds 77.7%. Refit stability (200×): only 8 of the top 20 stay
-in the top 20 in ≥80% of refits; median P90–P10 rank width 63.1. The board shows the
-P10–P90 rank range for top-20 rows (Predict Fun 2–143). Per-category bands are diagnostic only (n≥5), vs live global x0.30–x4.03 — see the model page table. RWA's SD band is 6.9x narrower (residual SD 0.60 vs 2.03
+in the top 20 in ≥80% of refits; median P90–P10 rank width 64.3. The board shows the
+P10–P90 rank range for top-20 rows (Predict Fun 2–145). Per-category bands are diagnostic only (n≥5), vs live global x0.30–x4.03 — see the model page table. RWA's SD band is 6.9x narrower (residual SD 0.60 vs 2.03
 global), but its empirical band
-sits almost entirely above x1.0. Three constructions would move 31, 9 and 16 rows; none
+sits almost entirely above x1.0. Three constructions would move 31, 9 and 17 rows; none
 is adopted. Bootstrap (500 resamples): precise only at $50M (−13.6%/+13.7%); $500M
-−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; `entry/evidence.json`). Two runs write identical bytes.
+−19.7%/+25.8%; $2.75B −27.6%/+40.1%. LOO x3.69 is computed at build time; the other blind tests are research runs (`p3-evidence.mjs`, seed 20261119; `entry/evidence.json`).
 
 ## 5. The launch base rate
 
@@ -67,10 +67,10 @@ protocol — an upper bound for old pre-token rows.
 Net = P(launch) x (1000 / TVL) x 0.10 x implied − $10.93, at P25, point and P75. The 10% is the share (slice = deposit / TVL x 10%). The
 $10.93 is $6 gas + $4.93 T-bill on $1,000 for 45 days at ~4%. ROBUST
 pays at the low end, FARM at the point, THIN only at the high end, SKIP at none
-(24/93/70/11). Verdicts are knife-edge: 36 rows sit within $2 of a boundary. Cost ±$2 changes 33–34 rows; share 5% changes 100 rows, 20% changes 112. The
+(24/93/70/11 through P5; 26/94/68/10 since P6, §13). Verdicts are knife-edge: 35 rows sit within $2 of a boundary. Cost ±$2 changes 31–34 rows; share 5% changes 105 rows, 20% changes 108. The
 10% share is the biggest lever — an assumption, not a measurement. The flat $10.93 stays
 although gas is chain-dependent: two readings give
-$3.79–$14.58 (82 rows change) and $12.36–$31.72 (56 rows change) — opposite directions,
+$3.79–$14.58 (77 rows change) and $12.36–$31.72 (59 rows change) — opposite directions,
 so neither is adopted without a decision. Each row's farm plan is six steps from its own
 record (WHEN / COST / TIME table, exit TVL −30%, review date).
 
@@ -94,8 +94,7 @@ Model, rows and verdicts unchanged (24/93/70/11). Evidence only — rank #12 of 
 - **Attribution correction.** The headline x2.08 quoted since P2 is the GLOBAL-ONLY fit
 on the time-split; the model as built scores x2.21 (rank ρ 0.301 vs 0.313). The cover
 quotes x2.21 for the model, x2.08 as global-only. The "±12%" holds only at $50M (§4); calibration is the refit 0.670, not the in-sample 0.6527 (§5).
-- **Cover.** KPI strip, the 758 ledger as a bar, a
-tenure chart, the OOS panel with a walk-forward ablation table, the scatter plots 198 board rows beside 94 comps. A $1,000/$10,000 ticket toggle recomputes nets and verdicts; the board gains a "Net if launch" column and P10–P90 rank ranges for
+- **Cover.** A $1,000/$10,000 ticket toggle recomputes nets and verdicts; the board gains a "Net if launch" column and P10–P90 rank ranges for
 top-20 rows.
 - **Detail + model page.** The factor chain shows running dollars and the category's n
 comps + mean residual; the farm plan is a WHEN / COST / TIME table with total, exit rule
@@ -107,7 +106,10 @@ gain MODEL and MISS columns; the model page shows per-category bands, verdict se
 
 ## 11. P4 (board-first cover, 19 Nov 2026)
 
-Model, rows and verdicts unchanged (24/93/70/11). Layout only: cover is KPI strip + one evidence row + board (≥8 rows at 1440×900), controls above it; Tested-blind, ablation and tenure move to the method page. Shot 2 is the detail scrolled to the farm plan; shot 3 was the $10K FARM view (94 FARM rows at $10,000 each; top net $128 Bucket CDP; top net-if-launch $438 Stellar DEX; book net $4,750). The verdict filter follows the ticket, so the badges in the view are the $10K verdicts. Predict Fun's $10K nets ($1,681 with odds, $2,536 if it launches) are the board's largest, but it was ROBUST, so it was not in the FARM view.
+Model, rows and verdicts unchanged (24/93/70/11). Layout only: cover is KPI strip + one evidence row + board (≥8 rows at 1440×900), controls above it; Tested-blind, ablation and tenure move to the method page. Shot 2 is the detail scrolled to the farm plan; shot 3 was the $10K FARM view (top net $128 Bucket CDP; book net $4,750). The verdict filter follows the ticket, so the badges in the view are the $10K verdicts. Predict Fun's $10K nets ($1,681 with odds, $2,536 if it launches) are the board's largest, but it was ROBUST, so it was not in the FARM view.
 
 ## 12. P5 (21 Nov 2026)
 Shot 3 is all rows at $10,000 by net (Predict Fun tops it: $1,681 / $2,536). Book line is the whole board (198 rows · $10,952 · $24,812 · 303 h). Cover shows 10 rows; badge has the main.ts checksum. Model unchanged.
+
+## 13. P6 (22 Nov 2026)
+Cover shows 12 rows; best farm lists $125/h at $1K and $1,296/h at $10K; ledger names kept/rejected terms. Farm-book line adds the P25 net. Peers table was already in the detail view since P2. Model: kin discount removed; verdicts 26/94/68/10; book $24,812 to $25,652; Predict Fun $1,681/$2,536 unchanged. k=3 kept.
