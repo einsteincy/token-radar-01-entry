@@ -7,7 +7,9 @@
 //                (fitted at build time; research: a = 8.998, b = 0.405, i.e. 10^3.91 x TVL^0.405)
 //   category   = shrunk intercept shift, k=3: sum(residuals in category) / (n_cat + 3)
 //                (applied to ALL categories; the k=3 shrinkage pulls small-n toward 0)
-//   sibling    = x0.5 when the row's first word matches a live-token protocol (7 rows)
+//   sibling    = NO discount since P6 (22 Nov 2026): kin-linked rows were halved (x0.5,
+//                7 rows) through P5; the discount is removed — whole-board book $24,812 to
+//                $25,652, verdicts 24/93/70/11 to 26/94/68/10, top figures unchanged.
 //   implied    = round(exp(a + b*log(TVL) + category_effect) * sibling_factor), min 1
 //   band       = LOO residuals on the restricted set, global-only fit, rounded to two decimals
 //                (research: P10 x0.08 / P25 x0.30 / P75 x4.03 / P90 x9.16, median miss x3.69)
@@ -17,7 +19,8 @@
 //
 // Growth, maturity/seasoning and breadth are DROPPED from the value model (all hurt OOS; see the
 // research note). No protocol name is ever special-cased: the same function scores every row.
-// The 7 kin-linked rows are derived by the first-word rule at build time, not hardcoded.
+// The 7 kin-linked rows are still derived by the first-word rule at build time, not hardcoded;
+// since P6 they carry no discount (SIBLING_FACTOR = 1).
 
 /** The snapshot's protocol entry: exactly the ten fields the sealed input carries. */
 export interface SnapshotProtocol {
@@ -62,7 +65,7 @@ export const PLAN_CAPITAL_USD = 1000;
 export const PLAN_COST_USD = 10.93; // gas $6 + T-bill $4.93 on $1k for 45d
 export const AIRDROP_POOL_FRACTION = 0.10; // pro-rata 10% share model
 export const CATEGORY_SHRINK_K = 3;
-export const SIBLING_FACTOR = 0.5;
+export const SIBLING_FACTOR = 1; // P6: kin discount removed (was 0.5 through P5)
 
 /** A farm step: the action, what it costs, and how long it takes. */
 export interface FarmStep {
@@ -284,7 +287,7 @@ function categoryEffects(train: SnapshotProtocol[], residuals: number[], k: numb
  * The factors are rounded to two decimals — the stated band (x0.08 / x0.30 / x4.03 / x9.16) — and
  * the verdicts are netted from those stated factors, so the band the dashboard shows is the band
  * the verdicts are computed from. (The exact P25 is 0.2952; the stated 0.30 is what the decided
- * verdict counts 24/93/70/11 are computed from.) */
+ * verdict counts 26/94/68/10 are computed from.) */
 function looBand(comps: SnapshotProtocol[]): { p10: number; p25: number; p75: number; p90: number; medianMiss: number } {
   const ratios: number[] = [];
   const absErrs: number[] = [];
